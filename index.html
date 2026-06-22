@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero Trust Platform</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  
+  <style>
+    h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+    .tab-btn{background:transparent;border:none;padding:8px 16px;font-size:14px;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
+    .tab-btn.active{color:var(--color-text-primary);border-bottom:2px solid var(--color-text-primary);font-weight:500}
+    .card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+    .badge{font-size:12px;padding:3px 10px;border-radius:var(--border-radius-md);display:inline-block}
+    .badge-info{background:rgba(0,180,216,0.2);color:#0077b6}
+    .badge-success{background:rgba(40,167,69,0.2);color:#28a745}
+    .badge-warning{background:rgba(255,193,7,0.2);color:#ffc107}
+    .result{font-size:13px;padding:10px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);margin-top:10px;word-break:break-all;font-family:var(--font-mono);display:none;white-space:pre-wrap}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px}
+    .section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin:0 0 10px;text-transform:uppercase;letter-spacing:.05em}
+    table{width:100%;font-size:13px;border-collapse:collapse}
+    th{text-align:left;color:var(--color-text-secondary);font-weight:400;padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+    td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+    
+    :root {
+      --color-text-primary: #111827;
+      --color-text-secondary: #4b5563;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f3f4f6;
+      --color-border-tertiary: #e5e7eb;
+      --border-radius-lg: 8px;
+      --border-radius-md: 4px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    input, select, textarea {
+      padding: 6px 10px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    button:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+
+<h2 class="sr-only">Interface Zero Trust — gestion de documents confidentiels avec authentification, upload, signature et audit</h2>
+
+<div style="padding:1rem 0; max-width:1000px; margin:0 auto;">
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem">
+    <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,119,182,0.1);display:flex;align-items:center;justify-content:center">
+      <i class="ti ti-lock" style="font-size:18px;color:#0077b6" aria-hidden="true"></i>
+    </div>
+    <div>
+      <p style="margin:0;font-weight:500;font-size:16px">Zero Trust Platform</p>
+      <p style="margin:0;font-size:13px;color:var(--color-text-secondary)">Gestion de documents confidentiels - Kyle Dottin</p>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block"></span>
+      <span id="status-label" style="font-size:13px;color:var(--color-text-secondary)">Non connecté</span>
+    </div>
+  </div>
+
+  <div style="border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem;display:flex;gap:4px">
+    <button class="tab-btn active" onclick="showTab('connexion')"><i class="ti ti-key" aria-hidden="true"></i> Connexion</button>
+    <button class="tab-btn" onclick="showTab('documents')"><i class="ti ti-file" aria-hidden="true"></i> Documents</button>
+    <button class="tab-btn" onclick="showTab('pdf')"><i class="ti ti-files" aria-hidden="true"></i> Merge / Split</button>
+    <button class="tab-btn" onclick="showTab('signature')"><i class="ti ti-pen" aria-hidden="true"></i> Signature</button>
+    <button class="tab-btn" onclick="showTab('audit')"><i class="ti ti-list" aria-hidden="true"></i> Audit</button>
+  </div>
+
+  <div id="tab-connexion">
+    <div class="card">
+      <p class="section-title">Obtenir un token Keycloak</p>
+      <div class="row" style="margin-bottom:12px">
+        <div><label>Nom d'utilisateur</label><input id="username" type="text" value="kdottin" placeholder="kdottin" style="width:100%"></div>
+        <div><label>Mot de passe</label><input id="password" type="password" value="password" placeholder="••••••" style="width:100%"></div>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <div><label>Client ID</label><input id="clientId" type="text" value="Zerotrust-gateway" style="width:100%"></div>
+        <div><label>Client Secret</label><input id="clientSecret" type="password" placeholder="Ex: g6bX..." style="width:100%"></div>
+      </div>
+      <label>Realm</label>
+      <input id="realm" type="text" value="1stRealm" style="width:100%;margin-bottom:12px">
+      <button onclick="connect()" style="width:100%"><i class="ti ti-login" aria-hidden="true"></i> Se connecter</button>
+      <div id="conn-result" class="result"></div>
+    </div>
+  </div>
+
+  <div id="tab-documents" style="display:none">
+    <div class="card">
+      <p class="section-title">Upload un PDF</p>
+      <input type="file" id="upload-file" accept=".pdf" style="margin-bottom:12px; width:100%">
+      <button onclick="uploadDoc()" style="width:100%"><i class="ti ti-upload" aria-hidden="true"></i> Uploader</button>
+      <div id="upload-result" class="result"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Télécharger un PDF</p>
+      <label>Document ID</label>
+      <input id="download-id" type="text" placeholder="uuid du document" style="width:100%;margin-bottom:12px">
+      <button onclick="downloadDoc()" style="width:100%"><i class="ti ti-download" aria-hidden="true"></i> Télécharger</button>
+      <div id="download-result" class="result"></div>
+    </div>
+  </div>
+
+  <div id="tab-pdf" style="display:none">
+    <div class="card">
+      <p class="section-title">Fusionner deux PDFs</p>
+      <label>Document ID 1</label>
+      <input id="merge-id1" type="text" placeholder="uuid document 1" style="width:100%;margin-bottom:8px">
+      <label>Document ID 2</label>
+      <input id="merge-id2" type="text" placeholder="uuid document 2" style="width:100%;margin-bottom:12px">
+      <button onclick="mergeDocs()" style="width:100%"><i class="ti ti-copy" aria-hidden="true"></i> Fusionner</button>
+      <div id="merge-result" class="result"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Découper un PDF</p>
+      <label>Document ID</label>
+      <input id="split-id" type="text" placeholder="uuid document" style="width:100%;margin-bottom:8px">
+      <label>À partir de la page</label>
+      <input id="split-page" type="number" value="1" min="1" style="width:100%;margin-bottom:12px">
+      <button onclick="splitDoc()" style="width:100%"><i class="ti ti-scissors" aria-hidden="true"></i> Découper</button>
+      <div id="split-result" class="result"></div>
+    </div>
+  </div>
+
+  <div id="tab-signature" style="display:none">
+    <div class="card">
+      <p class="section-title">Signer un document</p>
+      <input type="file" id="sign-file" accept=".pdf" style="margin-bottom:8px; width:100%">
+      <label>Document ID</label>
+      <input id="sign-doc-id" type="text" placeholder="uuid du document" style="width:100%;margin-bottom:12px">
+      <button onclick="signDoc()" style="width:100%"><i class="ti ti-pen" aria-hidden="true"></i> Signer</button>
+      <div id="sign-result" class="result"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Vérifier une signature</p>
+      <input type="file" id="verify-file" accept=".pdf" style="margin-bottom:8px; width:100%">
+      <label>Document ID</label>
+      <input id="verify-doc-id" type="text" placeholder="uuid du document" style="width:100%;margin-bottom:8px">
+      <label>Signature (base64)</label>
+      <textarea id="verify-sig" rows="3" style="width:100%;font-family:var(--font-mono);font-size:12px;margin-bottom:12px" placeholder="Colle ta signature ici..."></textarea>
+      <button onclick="verifyDoc()" style="width:100%"><i class="ti ti-check" aria-hidden="true"></i> Vérifier</button>
+      <div id="verify-result" class="result"></div>
+    </div>
+  </div>
+
+  <div id="tab-audit" style="display:none">
+    <div class="card">
+      <p class="section-title">Journal d'audit</p>
+      <button onclick="loadAudit()" style="width:100%;margin-bottom:12px"><i class="ti ti-refresh" aria-hidden="true"></i> Charger les logs</button>
+      <div id="audit-table"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Enregistrer une action (Manuel)</p>
+      <div class="row" style="margin-bottom:8px">
+        <div><label>User ID</label><input id="audit-user" type="text" placeholder="kdottin" style="width:100%"></div>
+        <div>
+          <label>Action</label>
+          <select id="audit-action" style="width:100%">
+            <option>UPLOAD</option><option>DOWNLOAD</option><option>MERGE</option><option>SPLIT</option><option>SIGN</option><option>VERIFY</option>
+          </select>
+        </div>
+      </div>
+      <label>Document ID</label>
+      <input id="audit-doc" type="text" placeholder="uuid du document" style="width:100%;margin-bottom:12px">
+      <button onclick="logAudit()" style="width:100%"><i class="ti ti-plus" aria-hidden="true"></i> Enregistrer</button>
+      <div id="audit-log-result" class="result"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let TOKEN = '';
+const BASE_DOC = 'http://localhost:8081';
+const BASE_SIG = 'http://localhost:8082';
+const BASE_AUD = 'http://localhost:8083';
+const BASE_KC  = 'http://localhost:8080';
+
+function showTab(name) {
+  ['connexion','documents','pdf','signature','audit'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name?'block':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['connexion','documents','pdf','signature','audit'][i]===name);
+  });
+  if(name === 'audit') {
+    loadAudit();
+  }
+}
+
+function showResult(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.style.color = ok ? '#16a34a' : ok===false ? '#dc2626' : 'var(--color-text-primary)';
+  el.textContent = msg;
+}
+
+function setStatus(connected) {
+  document.getElementById('status-dot').style.background = connected ? '#22c55e' : '#888';
+  document.getElementById('status-label').textContent = connected ? 'Connecté' : 'Non connecté';
+}
+
+// Intercepte l'absence de token, logge l'erreur technique dans la console F12 et l'affiche sur l'interface graphique
+function checkToken(resultId) {
+  if (!TOKEN) {
+    const errorMsg = "SecurityException: Access Denied. No local token available.";
+    console.error(errorMsg);
+    showResult(resultId, errorMsg, false);
+    return false;
+  }
+  return true;
+}
+
+// Fonction pour extraire proprement le message d'erreur JSON ou brut renvoyé par vos microservices
+async function getBackendErrorMessage(response) {
+  try {
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      return json.message || json.error_description || json.error || text || `Status ${response.status}`;
+    } catch(e) {
+      return text || `Status ${response.status}`;
+    }
+  } catch(e) {
+    return `Status ${response.status}`;
+  }
+}
+
+async function autoLogAudit(action, documentId) {
+  if (!TOKEN) return;
+  const usernameInput = document.getElementById('username');
+  const userId = usernameInput ? usernameInput.value : 'system';
+  
+  try {
+    await fetch(`${BASE_AUD}/audit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId, action, documentId })
+    });
+  } catch (e) {
+    console.error("Audit failure:", e);
+  }
+}
+
+async function connect() {
+  const u = document.getElementById('username').value;
+  const p = document.getElementById('password').value;
+  const cid = document.getElementById('clientId').value;
+  const cs = document.getElementById('clientSecret').value;
+  const realm = document.getElementById('realm').value;
+  try {
+    const r = await fetch(`${BASE_KC}/realms/${realm}/protocol/openid-connect/token`, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:`username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&grant_type=password&client_id=${encodeURIComponent(cid)}&client_secret=${encodeURIComponent(cs)}`
+    });
+    if(r.ok) {
+      const d = await r.json();
+      TOKEN = d.access_token;
+      setStatus(true);
+      showResult('conn-result', 'Token obtenu — expire dans ' + Math.round(d.expires_in/60) + ' min', true);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('conn-result', errMsg, false);
+      setStatus(false);
+    }
+  } catch(e) { showResult('conn-result', 'Impossible de joindre Keycloak : ' + e.message, false); }
+}
+
+async function uploadDoc() {
+  if (!checkToken('upload-result')) return;
+  const f = document.getElementById('upload-file').files[0];
+  if(!f) return showResult('upload-result','Sélectionne un fichier',false);
+  const fd = new FormData(); fd.append('file', f);
+  try {
+    const r = await fetch(`${BASE_DOC}/documents/upload`, {method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:fd});
+    if(r.ok) {
+      const t = await r.text();
+      showResult('upload-result','Document uploadé — ID : ' + t, true);
+      autoLogAudit('UPLOAD', t);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('upload-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('upload-result', e.message, false); }
+}
+
+async function downloadDoc() {
+  if (!checkToken('download-result')) return;
+  const id = document.getElementById('download-id').value.trim();
+  if(!id) return showResult('download-result','Entre un ID',false);
+  try {
+    const r = await fetch(`${BASE_DOC}/documents/${id}`, {headers:{'Authorization':'Bearer '+TOKEN}});
+    if(r.ok) {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=id+'.pdf'; a.click();
+      showResult('download-result','Téléchargement démarré', true);
+      autoLogAudit('DOWNLOAD', id);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('download-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('download-result', e.message, false); }
+}
+
+async function mergeDocs() {
+  if (!checkToken('merge-result')) return;
+  const id1 = document.getElementById('merge-id1').value.trim();
+  const id2 = document.getElementById('merge-id2').value.trim();
+  if(!id1||!id2) return showResult('merge-result','Entre les deux IDs',false);
+  try {
+    const r = await fetch(`${BASE_DOC}/documents/merge?docId1=${id1}&docId2=${id2}`, {method:'POST', headers:{'Authorization':'Bearer '+TOKEN}});
+    if(r.ok) {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='merged.pdf'; a.click();
+      showResult('merge-result','PDF fusionné téléchargé', true);
+      autoLogAudit('MERGE', `${id1}+${id2}`);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('merge-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('merge-result', e.message, false); }
+}
+
+async function splitDoc() {
+  if (!checkToken('split-result')) return;
+  const id = document.getElementById('split-id').value.trim();
+  const page = document.getElementById('split-page').value;
+  if(!id) return showResult('split-result','Entre un ID',false);
+  try {
+    const r = await fetch(`${BASE_DOC}/documents/${id}/split?page=${page}`, {method:'POST', headers:{'Authorization':'Bearer '+TOKEN}});
+    if(r.ok) {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='split.pdf'; a.click();
+      showResult('split-result','PDF découpé téléchargé', true);
+      autoLogAudit('SPLIT', id);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('split-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('split-result', e.message, false); }
+}
+
+async function signDoc() {
+  if (!checkToken('sign-result')) return;
+  const f = document.getElementById('sign-file').files[0];
+  const id = document.getElementById('sign-doc-id').value.trim();
+  if(!f||!id) return showResult('sign-result','Sélectionne un fichier et entre un ID',false);
+  try {
+    const buf = await f.arrayBuffer();
+    const r = await fetch(`${BASE_SIG}/signatures/sign/${id}`, {method:'POST', headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/octet-stream'}, body:buf});
+    if(r.ok) {
+      const t = await r.text();
+      document.getElementById('verify-doc-id').value = id;
+      document.getElementById('verify-sig').value = t;
+      showResult('sign-result','Signature générée (copiée dans la zone vérification) :\n' + t.substring(0,60) + '...', true);
+      autoLogAudit('SIGN', id);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('sign-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('sign-result', e.message, false); }
+}
+
+async function verifyDoc() {
+  if (!checkToken('verify-result')) return;
+  const f = document.getElementById('verify-file').files[0];
+  const id = document.getElementById('verify-doc-id').value.trim();
+  const sig = document.getElementById('verify-sig').value.trim();
+
+  if(!f || !id || !sig) {
+    return showResult('verify-result','Remplis tous les champs',false);
+  }
+
+  try {
+    const buf = await f.arrayBuffer();
+    const r = await fetch(`${BASE_SIG}/signatures/verify/${id}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN,
+        'Content-Type': 'application/octet-stream',
+        'X-Signature': sig
+      },
+      body: buf
+    });
+
+    if (r.ok) {
+      const t = await r.text();
+      const valid = t.trim() === 'true';
+      showResult(
+        'verify-result',
+        valid
+          ? 'Signature valide — document authentique'
+          : 'Signature invalide — document modifié ou corrompu',
+        valid
+      );
+      autoLogAudit('VERIFY', id);
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('verify-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('verify-result', e.message, false); }
+}
+
+async function loadAudit() {
+  if (!TOKEN) {
+    const errorMsg = "SecurityException: Access Denied. No local token available.";
+    console.error(errorMsg);
+    document.getElementById('audit-table').innerHTML = `<p style="color:#dc2626;font-size:13px">${errorMsg}</p>`;
+    return;
+  }
+  try {
+    const r = await fetch(`${BASE_AUD}/audit`, {headers:{'Authorization':'Bearer '+TOKEN}});
+    if(r.ok) {
+      const logs = await r.json();
+      if(!logs.length) { document.getElementById('audit-table').innerHTML='<p style="color:var(--color-text-secondary);font-size:13px">Aucun log trouvé</p>'; return; }
+      let html = '<table><thead><tr><th>Utilisateur</th><th>Action</th><th>Document ID</th><th>Date</th></tr></thead><tbody>';
+      logs.forEach(l => {
+        const colors = {UPLOAD:'info',SIGN:'success',DOWNLOAD:'info',MERGE:'warning',SPLIT:'warning',VERIFY:'success'};
+        const c = colors[l.action]||'';
+        html += `<tr><td>${l.userId||'-'}</td><td>${c?`<span class="badge badge-${c}">${l.action}</span>`:l.action}</td><td style="font-family:var(--font-mono);font-size:11px">${(l.documentId||'-').substring(0,24)}...</td><td>${l.timestamp?l.timestamp.replace('T',' ').substring(0,16):'-'}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('audit-table').innerHTML = html;
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      document.getElementById('audit-table').innerHTML = `<p style="color:#dc2626;font-size:13px">Erreur ${r.status} : ${errMsg}</p>`;
+    }
+  } catch(e) { document.getElementById('audit-table').innerHTML=`<p style="color:#dc2626;font-size:13px">${e.message}</p>`; }
+}
+
+async function logAudit() {
+  if (!checkToken('audit-log-result')) return;
+  const body = {userId:document.getElementById('audit-user').value, action:document.getElementById('audit-action').value, documentId:document.getElementById('audit-doc').value};
+  try {
+    const r = await fetch(`${BASE_AUD}/audit`, {method:'POST', headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if(r.ok) {
+      showResult('audit-log-result','Action enregistrée dans le journal', true);
+      loadAudit();
+    } else {
+      const errMsg = await getBackendErrorMessage(r);
+      showResult('audit-log-result', 'Erreur ' + r.status + ' : ' + errMsg, false);
+    }
+  } catch(e) { showResult('audit-log-result', e.message, false); }
+}
+</script>
+</body>
+</html>

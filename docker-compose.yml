@@ -1,0 +1,14 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.2
+    ports: ["8080:8080"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: zerotrust
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password

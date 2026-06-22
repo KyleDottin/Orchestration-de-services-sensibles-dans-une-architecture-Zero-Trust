@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/1stRealm
+
+  datasource:
+    url: jdbc:h2:mem:documentdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  # Console H2 accessible sur /h2-console (pour debug)
+  h2:
+    console:
+      enabled: true

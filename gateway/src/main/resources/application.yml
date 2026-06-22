@@ -1,0 +1,35 @@
+server:
+  port: 9090 # Dans Keycloak, la gateway est configuré sur le port 9090
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak tourne sur 8080, realm "zerotrust"
+          # Spring va automatiquement aller chercher
+          issuer-uri: http://localhost:8080/realms/1stRealm
+
+  cloud:
+    gateway:
+      routes:
+        # Route 1 — tout ce qui commence par /documents
+        # est renvoyé vers le document-service
+        - id: document-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/documents/**
+
+        # Route 2 — tout ce qui commence par /signatures
+        # est renvoyé vers le signature-service
+        - id: signature-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/signatures/**
+
+        # Route 3 — tout ce qui commence par /audit
+        # est renvoyé vers l'audit-service
+        - id: audit-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/audit/**
